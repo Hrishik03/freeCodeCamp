@@ -341,6 +341,7 @@ exports.createSchemaCustomization = ({ actions }) => {
       superOrder: Int
       template: String
       tests: [Test]
+      fields: ChallengeFields
       title: String
       transcript: String
       translationPending: Boolean
@@ -386,6 +387,7 @@ exports.createSchemaCustomization = ({ actions }) => {
     type Answer {
       answer: String
       feedback: String
+      audioId: String
     }
     type RequiredResource {
       link: String
@@ -466,7 +468,9 @@ exports.createSchemaCustomization = ({ actions }) => {
       beforeAll: String
       afterAll: String
     }
-
+    type ChallengeFields {
+      slug: String
+    }
     type Nodule {
       type: String
       data: JSON
