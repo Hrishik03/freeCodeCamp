@@ -4,7 +4,7 @@ import { Callout, Spacer, Container, Row, Col } from '@freecodecamp/ui';
 import {
   archivedSuperBlocks,
   SuperBlocks
-} from '../../../../../shared-dist/config/curriculum';
+} from '@freecodecamp/shared/config/curriculum';
 import { SuperBlockIcon } from '../../../assets/superblock-icon';
 import { Link } from '../../../components/helpers';
 import CapIcon from '../../../assets/icons/cap';
@@ -30,7 +30,7 @@ export const ConditionalDonationAlert = ({
 }: ConditionalDonationAlertProps): JSX.Element | null => {
   const { t } = useTranslation();
 
-  const betaCertifications: SuperBlocks[] = [];
+  const betaCertifications: SuperBlocks[] = [SuperBlocks.A2English];
 
   const unfinishedCertifications = [
     SuperBlocks.B1English,
@@ -38,12 +38,18 @@ export const ConditionalDonationAlert = ({
     SuperBlocks.A2Spanish,
     SuperBlocks.A2Chinese,
     SuperBlocks.A1Chinese,
-    SuperBlocks.FullStackDeveloper
+    SuperBlocks.FrontEndDevLibsV9,
+    SuperBlocks.BackEndDevApisV9,
+    SuperBlocks.FullStackDeveloperV9
   ];
 
   if (!isDonating && betaCertifications.includes(superBlock))
     return (
-      <Callout variant='info' className='annual-donation-alert'>
+      <Callout
+        variant='note'
+        label={t('misc.note')}
+        className='annual-donation-alert'
+      >
         <p>{t('donate.beta-certification')}</p>
         <hr />
         <p className='btn-container'>
@@ -62,7 +68,11 @@ export const ConditionalDonationAlert = ({
 
   if (!isDonating && unfinishedCertifications.includes(superBlock))
     return (
-      <Callout variant='info' className='annual-donation-alert'>
+      <Callout
+        variant='note'
+        label={t('misc.note')}
+        className='annual-donation-alert'
+      >
         <p>
           <Trans i18nKey='donate.consider-donating-2'>
             <Link className='inline' to='/donate'>
@@ -86,19 +96,26 @@ function SuperBlockIntro({
   const { t } = useTranslation();
   const superBlockIntroObj: {
     title: string;
-    intro: string[];
+    intro: string[] | string;
     note: string;
   } = t(`intro:${superBlock}`, { returnObjects: true }) as {
     title: string;
-    intro: string[];
+    intro: string[] | string;
     note: string;
   };
 
   const {
     title: i18nSuperBlock,
-    intro: superBlockIntroText,
+    intro: introRaw,
     note: superBlockNoteText
   } = superBlockIntroObj;
+
+  // Ensure intro is always an array
+  const superBlockIntroText = Array.isArray(introRaw)
+    ? introRaw
+    : typeof introRaw === 'string'
+      ? [introRaw]
+      : [''];
 
   const IntroTopDefault = ({ fsd }: { fsd: boolean }) => (
     <>
@@ -162,19 +179,17 @@ function SuperBlockIntro({
       {superBlockNoteText && (
         <>
           <Spacer size='m' />
-          <Callout variant='info'>{superBlockNoteText}</Callout>
+          <Callout variant='note' label={t('misc.note')}>
+            {superBlockNoteText}
+          </Callout>
         </>
       )}
     </>
   );
 
-  const isFullStackDeveloper =
-    superBlock === SuperBlocks.FullStackDeveloper ||
-    superBlock === SuperBlocks.FullStackDeveloperV9;
-
   return (
     <>
-      <IntroTopDefault fsd={isFullStackDeveloper} />
+      <IntroTopDefault fsd={superBlock === SuperBlocks.FullStackDeveloperV9} />
       <ConditionalDonationAlert
         superBlock={superBlock}
         onCertificationDonationAlertClick={onCertificationDonationAlertClick}

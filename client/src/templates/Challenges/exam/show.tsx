@@ -205,7 +205,9 @@ function ShowExam(props: ShowExamProps) {
     });
     challengeMounted(challengeMeta.id);
 
-    container.current?.focus();
+    // hack to ensure the container is focused after the component mounts
+    // and Gatsby doesn't interfere with the focus.
+    requestAnimationFrame(() => container.current?.focus());
 
     return () => {
       cleanUp();
@@ -496,7 +498,7 @@ function ShowExam(props: ShowExamProps) {
               <Spacer size='m' />
 
               {qualifiedForExam ? (
-                <Callout variant='info'>
+                <Callout variant='note' label={t('misc.note')}>
                   <p>{t('learn.exam.qualified')}</p>
                 </Callout>
               ) : !prerequisitesComplete ? (

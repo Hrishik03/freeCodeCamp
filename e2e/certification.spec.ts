@@ -1,44 +1,8 @@
-import { execSync } from 'child_process';
 import { test, expect, Page } from '@playwright/test';
 import translations from '../client/i18n/locales/english/translations.json';
 import { alertToBeVisible } from './utils/alerts';
-import {
-  deleteAllEmails,
-  getAllEmails,
-  getFirstEmail,
-  getSubject
-} from './utils/mailhog';
 
-test.describe('Claim a certification - almost certified user', () => {
-  test.beforeEach(async () => {
-    await deleteAllEmails();
-    execSync('node ./tools/scripts/seed/seed-demo-user --unclaimed-user');
-  });
-
-  test.afterAll(() => {
-    execSync('node ./tools/scripts/seed/seed-demo-user --certified-user');
-  });
-  test.use({ storageState: 'playwright/.auth/certified-user.json' });
-
-  test('User receives a congratulations email on completing all certs', async ({
-    page
-  }) => {
-    await page.goto('/settings#cert-front-end-development-libraries');
-    await page
-      .getByRole('button', {
-        name: 'Claim Certification Front End Development Libraries V8'
-      })
-      .click();
-    // verify that an email is sent
-    await expect(async () => {
-      const emails = await getAllEmails();
-      expect(emails.messages).toHaveLength(1);
-      expect(getSubject(getFirstEmail(emails))).toBe(
-        'Congratulations on completing all of the freeCodeCamp certifications!'
-      );
-    }).toPass();
-  });
-});
+// TODO: Include fullstack emails when claiming fullstack is implemented.
 
 test.describe('Certification page - Non Microsoft', () => {
   test.beforeEach(async ({ page }) => {
@@ -99,7 +63,7 @@ test.describe('Certification page - Non Microsoft', () => {
     await expect(twitterLink).toBeVisible();
     await expect(twitterLink).toHaveAttribute(
       'href',
-      `https://twitter.com/intent/tweet?text=I just earned the Legacy%20Responsive%20Web%20Design%20V8 certification @freeCodeCamp! Check it out here: https://freecodecamp.org/certification/certifieduser/responsive-web-design`
+      `https://x.com/intent/post?text=I just earned the Legacy%20Responsive%20Web%20Design%20V8 certification @freeCodeCamp! Check it out here: https://freecodecamp.org/certification/certifieduser/responsive-web-design`
     );
 
     const projectLinks = certLink.getByTestId('project-links');
@@ -259,7 +223,7 @@ test.describe('Certification page - Microsoft', () => {
     await expect(twitterLink).toBeVisible();
     await expect(twitterLink).toHaveAttribute(
       'href',
-      'https://twitter.com/intent/tweet?text=I just earned the Foundational%20C%23%20with%20Microsoft certification @freeCodeCamp! Check it out here: https://freecodecamp.org/certification/certifieduser/foundational-c-sharp-with-microsoft'
+      'https://x.com/intent/post?text=I just earned the Foundational%20C%23%20with%20Microsoft certification @freeCodeCamp! Check it out here: https://freecodecamp.org/certification/certifieduser/foundational-c-sharp-with-microsoft'
     );
 
     const projectLinks = certLink.getByTestId('project-links');

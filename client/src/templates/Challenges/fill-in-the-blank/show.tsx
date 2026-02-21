@@ -10,9 +10,11 @@ import { bindActionCreators } from 'redux';
 import type { Dispatch } from 'redux';
 import { createSelector } from 'reselect';
 import { Container, Col, Row, Button, Spacer } from '@freecodecamp/ui';
-import ShortcutsModal from '../components/shortcuts-modal';
+
+import { ChallengeLang } from '@freecodecamp/shared/config/curriculum';
 
 // Local Utilities
+import ShortcutsModal from '../components/shortcuts-modal';
 import LearnLayout from '../../../components/layouts/learn';
 import { ChallengeNode, ChallengeMeta, Test } from '../../../redux/prop-types';
 import Hotkeys from '../components/hotkeys';
@@ -91,7 +93,8 @@ const ShowFillInTheBlank = ({
         fillInTheBlank,
         helpCategory,
         scene,
-        tests
+        tests,
+        lang
       }
     }
   },
@@ -128,12 +131,14 @@ const ShowFillInTheBlank = ({
       ...challengePaths
     });
     challengeMounted(challengeMeta.id);
-    container.current?.focus();
+    // hack to ensure the container is focused after the component mounts
+    // and Gatsby doesn't interfere with the focus.
+    requestAnimationFrame(() => container.current?.focus());
     // This effect should be run once on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleSubmit = () => {
+  const handleSubmitNonChinese = () => {
     const blankAnswers = fillInTheBlank.blanks.map(b => b.answer);
 
     const newAnswersCorrect = userAnswers.map((userAnswer, i) => {
@@ -144,14 +149,54 @@ const ShowFillInTheBlank = ({
         userAnswer.trim()
       ).toLowerCase();
 
-      const pairs = parseHanziPinyinPairs(answer);
-      const hanziPinyin = pairs.length === 1 ? pairs[0] : null;
+      return normalizedUserAnswer === answer.toLowerCase();
+    });
 
-      if (hanziPinyin) {
-        const { hanzi } = hanziPinyin;
-        // TODO: Implement full hanzi-pinyin validation logic
-        // https://github.com/freeCodeCamp/language-curricula/issues/18
-        return normalizedUserAnswer === hanzi;
+    setAnswersCorrect(newAnswersCorrect);
+    const hasWrongAnswer = newAnswersCorrect.some(a => a === false);
+    if (!hasWrongAnswer) {
+      setShowFeedback(false);
+      setFeedback(null);
+      openCompletionModal();
+    } else {
+      const firstWrongIndex = newAnswersCorrect.findIndex(a => a === false);
+      const feedback =
+        firstWrongIndex >= 0
+          ? fillInTheBlank.blanks[firstWrongIndex].feedback
+          : null;
+
+      setFeedback(feedback);
+      setShowWrong(true);
+      setShowFeedback(true);
+    }
+  };
+
+  const handleSubmitChinese = () => {
+    const blankAnswers = fillInTheBlank.blanks.map(b => b.answer);
+
+    const newAnswersCorrect = userAnswers.map((userAnswer, i) => {
+      if (!userAnswer) return false;
+
+      const answer = blankAnswers[i];
+      const normalizedUserAnswer = userAnswer.trim().toLowerCase();
+
+      if (fillInTheBlank.inputType === 'pinyin-to-hanzi') {
+        const pairs = parseHanziPinyinPairs(answer);
+        if (pairs.length === 1) {
+          const hanziPinyin = pairs[0];
+          const { hanzi } = hanziPinyin;
+          return (
+            normalizedUserAnswer.replace(/\s+/g, '') ===
+            hanzi.replace(/\s+/g, '')
+          );
+        }
+      } else if (fillInTheBlank.inputType === 'pinyin-tone') {
+        // Ignore spaces to allow both syllable formats:
+        // spaced (e.g., 'nǐ hǎo') and unspaced (e.g., 'nǐhǎo').
+        return (
+          normalizedUserAnswer.replace(/\s+/g, '') ===
+          answer.toLowerCase().replace(/\s+/g, '')
+        );
       }
 
       return normalizedUserAnswer === answer.toLowerCase();
@@ -173,6 +218,14 @@ const ShowFillInTheBlank = ({
       setFeedback(feedback);
       setShowWrong(true);
       setShowFeedback(true);
+    }
+  };
+
+  const handleSubmit = () => {
+    if (lang === ChallengeLang.Chinese) {
+      handleSubmitChinese();
+    } else {
+      handleSubmitNonChinese();
     }
   };
 
@@ -229,7 +282,12 @@ const ShowFillInTheBlank = ({
             {scene && <Scene scene={scene} sceneSubject={sceneSubject} />}
 
             <Col md={8} mdOffset={2} sm={10} smOffset={1} xs={12}>
-              {transcript && <ChallengeTranscript transcript={transcript} />}
+              {transcript && (
+                <ChallengeTranscript
+                  transcript={transcript}
+                  isDialogue={true}
+                />
+              )}
 
               {instructions && (
                 <>
@@ -301,6 +359,7 @@ export const query = graphql`
         helpCategory
         superBlock
         block
+        lang
         fields {
           slug
         }
